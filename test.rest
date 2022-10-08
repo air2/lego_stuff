@@ -1,0 +1,19 @@
+#### CRANE UP
+PUT http://localhost:57190/api/crane/position/ HTTP/1.1
+content-type: application/json
+
+{
+    "up": true
+}
+
+#### CRANE DOWN
+PUT http://localhost:57190/api/crane/position/ HTTP/1.1
+content-type: application/json
+
+{
+    "up": false
+}
+
+#### GET HUBS
+GET http://localhost:57190/api/crane/hubs/ HTTP/1.1
+content-type: application/json

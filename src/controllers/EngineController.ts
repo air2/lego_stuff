@@ -1,5 +1,5 @@
 import { Body, Get, JsonController, Post, Put } from "routing-controllers"
-import getEngine from "../engine/Engine"
+import getEngine, { IMotorId } from "../engine/Engine"
 import { logger } from "../logger"
 
 interface IApiResult<T> {
@@ -10,7 +10,24 @@ export interface ICranePosition {
   up: boolean
 }
 
-const CraneHubName = '3. Kraan'
+export const CraneHubName = '3. Kraan'
+
+export const CraneHubSwitchMotor: IMotorId = {
+  hub: CraneHubName,
+  port: "D"
+}
+
+export const CraneHubExtensionMotor: IMotorId = {
+  hub: CraneHubName,
+  port: "B"
+}
+
+export const CraneHubTiltMotor: IMotorId = {
+  hub: CraneHubName,
+  port: "C"
+}
+
+
 
 @JsonController('/crane')
 export default class EnigineController {
@@ -41,10 +58,10 @@ export default class EnigineController {
         }
         return x > 178
       }
-      await engine.startMotorWhileTilt(CraneHubName, "C", position.up  ? -100 : 100, tiltCheck)
+      await engine.startMotorWhileTilt(CraneHubTiltMotor, position.up  ? -100 : 100, tiltCheck)
       if (!position.up) {
         logger.info("Lowering the crane just a little bit.")
-        await engine.runMotorFor(CraneHubName, "C", 50, 3000)
+        await engine.runMotorFor(CraneHubTiltMotor, 50, 3000)
       }
   }
 
@@ -55,13 +72,13 @@ export default class EnigineController {
     //await engine.setCurrentToZero(CraneHubName, "D")
     //await engine.resetMotorAngleToZero(CraneHubName, "D", 50)
     if (!position.up){ 
-      await engine.runMotorToAngle(CraneHubName, "D", -50,
-      -360)
-      // await engine.runMotorAngle(CraneHubName, "D", -50, -40)
+      await engine.runMotorToAngle(CraneHubSwitchMotor, 50,
+      360)
+      await engine.runMotorAngle(CraneHubTiltMotor, 50, 20)
     } else {
-     await engine.runMotorToAngle(CraneHubName, "D", 50, 5)
+     await engine.runMotorToAngle(CraneHubSwitchMotor, 50, 5)
     }
-    await engine.runMotorFor(CraneHubName, "B", 100, 2000)
+    // await engine.runMotorFor(CraneHubName, "B", 100, 2000)
     
   }
 }

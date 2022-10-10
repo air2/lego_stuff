@@ -2,7 +2,7 @@
 
 import { AbsoluteMotor, PoweredUP, TachoMotor, TechnicMediumHub, TechnicMediumHubTiltSensor } from "node-poweredup";
 import { NotFoundError } from "routing-controllers";
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, firstValueFrom, ReplaySubject } from 'rxjs';
 import { EventEmitter } from "stream";
 import { logger } from "../logger";
 
@@ -34,8 +34,16 @@ import { logger } from "../logger";
    // }
 // });
 
+export interface IMotorId {
+    hub: string,
+    port: string
+}
 
+type MotorIdString = string
 
+function convertToMotorIdString(value: IMotorId): MotorIdString {
+    return `${value.hub}#${value.port}`
+}
 export class Engine {
     private _hubs: { 
         [key: string]: TechnicMediumHub
@@ -44,6 +52,9 @@ export class Engine {
     private initialized = new EventEmitter()
     public readonly onTiltX: {
         [key: string]: BehaviorSubject<number>
+    } = {}
+    public readonly motorPosition: {
+        [key: MotorIdString]: ReplaySubject<number>
     } = {}
 
     constructor() {
@@ -61,7 +72,7 @@ export class Engine {
                     sub.next(newValue)
                 }
             })
-          
+            
            //  console.log(this._hubs)
             if (Object.keys(this._hubs).length === 1) {
                 this.initialized.emit('done', true)
@@ -111,52 +122,77 @@ export class Engine {
         return result
     }
 
-    public async startMotor(hubName: string, port: string, speed: number): Promise<TachoMotor> {
-        const hub = this.getHub(hubName)
-        const motor = await hub.waitForDeviceAtPort(port) as TachoMotor
+    private async getMotor<T extends TachoMotor>(motorId: IMotorId): Promise<T> {
+        const hub = this.getHub(motorId.hub)
+        return await hub.waitForDeviceAtPort(motorId.port) as T
+    }
+
+    async reportPosition(motorId: IMotorId) {
+        const motor = await this.getMotor(motorId)
+        const id = convertToMotorIdString(motorId)
+        let subject = this.motorPosition[id]
+        if (!subject) {
+             subject = new ReplaySubject<number>(1)
+             this.motorPosition[id] = subject
+        }
+        motor.on('absolute', (position: number)=> {
+            this.motorPosition[id]?.next(position)
+            console.log('absolute', position)
+        })
+    }
+
+    async getLastPosition(motorId: IMotorId): Promise<number> {
+        const id = convertToMotorIdString(motorId)
+        const subject = this.motorPosition[id]
+        if (!subject){
+             throw new Error('Reporting not started')
+        }
+        return await firstValueFrom(subject.asObservable())
+    }
+
+
+    public async startMotor(motorId: IMotorId, speed: number): Promise<TachoMotor> {
+        const motor = await this.getMotor(motorId)
         //console.log(motor)
         motor.setPower(speed)
         return motor
     }   
 
-    public async resetMotorAngleToZero(hubName: string, port: string, speed: number) {
-        const hub = this.getHub(hubName)
-        const motor = await hub.waitForDeviceAtPort(port) as AbsoluteMotor
+    public async resetMotorAngleToZero(motorId: IMotorId, speed: number) {
+        const motor = await this.getMotor<AbsoluteMotor>(motorId)
         await motor.gotoRealZero(speed)    
     }
     
 
-    public async setCurrentToZero(hubName: string, port: string) {
-        const hub = this.getHub(hubName)
-        const motor = await hub.waitForDeviceAtPort(port) as AbsoluteMotor
+    public async setCurrentToZero(motorId: IMotorId, ) {
+        const hub = this.getHub(motorId.hub)
+        const motor = await hub.waitForDeviceAtPort(motorId.port) as AbsoluteMotor
         await motor.resetZero()    
     }
     
-    public async runMotorToAngle(hubName: string, port: string, speed: number, orientation: number): Promise<AbsoluteMotor> {
-        logger.info(`going to move motor ${port} on ${hubName} to ${orientation}`)
-        const hub = this.getHub(hubName)
-        const motor = await hub.waitForDeviceAtPort(port) as AbsoluteMotor
-        // motor.on('absolute', (position: number)=> {
-        //     console.log('absolute', position)
-        // })
+    public async runMotorToAngle(motorId: IMotorId, speed: number, orientation: number): Promise<AbsoluteMotor> {
+        logger.info(`going to move motor ${motorId.port} on ${motorId.hub} to ${orientation}`)
+        const hub = this.getHub(motorId.hub)
+        const motor = await hub.waitForDeviceAtPort(motorId.port) as AbsoluteMotor
+
         //motor.gotoRealZero(50)
         console.log(motor.values)
         await motor.gotoAngle(orientation, speed)
         return motor
     }   
 
-    public async runMotorAngle(hubName: string, port: string, speed: number, orientation: number): Promise<AbsoluteMotor> {
-        logger.info(`going to move motor ${port} on ${hubName} to ${orientation}`)
-        const hub = this.getHub(hubName)
-        const motor = await hub.waitForDeviceAtPort(port) as AbsoluteMotor
+    public async runMotorAngle(motorId: IMotorId, speed: number, orientation: number): Promise<AbsoluteMotor> {
+        logger.info(`going to move motor ${motorId.port} on ${motorId.hub} to ${orientation}`)
+        const hub = this.getHub(motorId.hub)
+        const motor = await hub.waitForDeviceAtPort(motorId.port) as AbsoluteMotor
         //motor.gotoRealZero(50)
         console.log(motor.values)
         await motor.rotateByDegrees(orientation, speed)
         return motor
     }  
 
-    public async startMotorWhileTilt(hubName: string, port: string, speed: number, tiltCheck: (x: number) => boolean) {
-        const onTilt = this.getTiltX(hubName)
+    public async startMotorWhileTilt(motorId: IMotorId, speed: number, tiltCheck: (x: number) => boolean) {
+        const onTilt = this.getTiltX(motorId.hub)
         if(tiltCheck(onTilt.getValue())) { 
             return
         }
@@ -165,24 +201,24 @@ export class Engine {
                 logger.info(`tilt ${x}`)
                 if (tiltCheck(x)) {
                     logger.info('motor is stopped')
-                    this.stopMotor(hubName, port)
+                    this.stopMotor(motorId)
                     subscription.unsubscribe()
                     resolve()
                 }
             })
-            this.startMotor(hubName, port, speed)
+            this.startMotor(motorId, speed)
         })
     }
 
-    public async runMotorFor(hubName: string, port: string, speed: number, duration: number){
-        const motor = await this.startMotor(hubName, port, speed)
-        await this.getHub(hubName).sleep(duration)
+    public async runMotorFor(motorId: IMotorId, speed: number, duration: number){
+        const motor = await this.startMotor(motorId, speed)
+        await this.getHub(motorId.hub).sleep(duration)
         await motor.brake()
     }
 
-    public async stopMotor<T extends TachoMotor>(hubName: string, port: string) {
-        const hub = this.getHub(hubName)
-        const motor = await hub.waitForDeviceAtPort(port) as T;
+    public async stopMotor(motorId: IMotorId, ) {
+        const hub = this.getHub(motorId.hub)
+        const motor = await hub.waitForDeviceAtPort(motorId.port) as TachoMotor;
         motor.brake()
     }
 }

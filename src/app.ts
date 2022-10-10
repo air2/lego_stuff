@@ -3,7 +3,8 @@ import 'reflect-metadata';
 
 import { json } from 'body-parser';
 import express, { Express } from 'express';
-import { Engine } from './engine/Engine';
+import { CraneHubSwitchMotor } from './controllers/EngineController';
+import getEngine, { Engine } from './engine/Engine';
 import initControllers from './helpers/BootstrapControllers';
 import getSettings from './helpers/Settings';
 import { logger } from './logger';
@@ -54,6 +55,15 @@ async function run () {
   // })
   app.listen(getSettings().port)
   logger.info(`done running ${getSettings().port}`)
+  
+  const engine = getEngine()
+  await engine.reportPosition(CraneHubSwitchMotor)
+
+  const position = await engine.getLastPosition(CraneHubSwitchMotor)
+  console.log('POS', position)
+  await engine.runMotorToAngle(CraneHubSwitchMotor, 100, position)
+  await engine.resetMotorAngleToZero(CraneHubSwitchMotor, position > 0 ? -100 : 100)
+  await engine.setCurrentToZero(CraneHubSwitchMotor)
 }
 
 run()

@@ -14,6 +14,22 @@ content-type: application/json
     "up": false
 }
 
+#### CRANE EXTEND
+PUT http://localhost:57190/api/crane/extend/ HTTP/1.1
+content-type: application/json
+
+{
+    "up": true
+}
+
+#### CRANE RETRACT
+PUT http://localhost:57190/api/crane/extend/ HTTP/1.1
+content-type: application/json
+
+{
+    "up": false
+}
+
 #### GET HUBS
 GET http://localhost:57190/api/crane/hubs/ HTTP/1.1
 content-type: application/json

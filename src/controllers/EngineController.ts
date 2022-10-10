@@ -44,7 +44,24 @@ export default class EnigineController {
       await engine.startMotorWhileTilt(CraneHubName, "C", position.up  ? -100 : 100, tiltCheck)
       if (!position.up) {
         logger.info("Lowering the crane just a little bit.")
-        engine.runMotorFor(CraneHubName, "C", 50, 3000)
+        await engine.runMotorFor(CraneHubName, "C", 50, 3000)
       }
+  }
+
+  @Put('/extend/')
+  async ExtendCrane(@Body() position: ICranePosition) {
+    logger.info('extending crane')
+    const engine = getEngine()
+    //await engine.setCurrentToZero(CraneHubName, "D")
+    //await engine.resetMotorAngleToZero(CraneHubName, "D", 50)
+    if (!position.up){ 
+      await engine.runMotorToAngle(CraneHubName, "D", -50,
+      -360)
+      // await engine.runMotorAngle(CraneHubName, "D", -50, -40)
+    } else {
+     await engine.runMotorToAngle(CraneHubName, "D", 50, 5)
+    }
+    await engine.runMotorFor(CraneHubName, "B", 100, 2000)
+    
   }
 }

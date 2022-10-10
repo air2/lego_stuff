@@ -1,0 +1,9 @@
+{
+    "verbose": true,
+    "watch": ["src/", "../lib/src/", "package.json", "esbuild.config.js", ".swcrc"],
+    "ext": "ts,json",
+    "exec-esbuild": "node esbuild.config.js && node --enable-source-maps ./out/app.js",
+    "exec-vanilla": "node --enable-source-maps ./out/app.js",
+    "exec": "swc src --out-dir out && node --enable-source-maps ./out/app.js",
+    "delay": 0
+  }

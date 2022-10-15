@@ -135,9 +135,13 @@ export class Engine {
              subject = new ReplaySubject<number>(1)
              this.motorPosition[id] = subject
         }
-        motor.on('absolute', (position: number)=> {
-            this.motorPosition[id]?.next(position)
-            console.log('absolute', position)
+        let lastPosition: number | undefined
+        motor.on('absolute', (position: {angle: number})=> {
+            if (lastPosition !== position.angle) {
+                lastPosition = position.angle
+                this.motorPosition[id]?.next(lastPosition)
+                console.log('absolute', lastPosition)
+            }
         })
     }
 

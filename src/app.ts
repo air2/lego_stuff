@@ -59,11 +59,15 @@ async function run () {
   const engine = getEngine()
   await engine.reportPosition(CraneHubSwitchMotor)
 
-  const position = await engine.getLastPosition(CraneHubSwitchMotor)
+  let position = await engine.getLastPosition(CraneHubSwitchMotor)
   console.log('POS', position)
-  await engine.runMotorToAngle(CraneHubSwitchMotor, 100, position)
-  await engine.resetMotorAngleToZero(CraneHubSwitchMotor, position > 0 ? -100 : 100)
-  await engine.setCurrentToZero(CraneHubSwitchMotor)
+  while (position < -20 || position > 20) {
+    await engine.runMotorToAngle(CraneHubSwitchMotor, 100, position)
+    await engine.resetMotorAngleToZero(CraneHubSwitchMotor, position > 0 ? -100 : 100)
+    await engine.setCurrentToZero(CraneHubSwitchMotor)
+    position = await engine.getLastPosition(CraneHubSwitchMotor)
+    console.log('POS', position)
+  }
 }
 
 run()

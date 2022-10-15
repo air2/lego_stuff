@@ -134,17 +134,34 @@ export class Engine {
         if (!subject) {
              subject = new ReplaySubject<number>(1)
              this.motorPosition[id] = subject
+        
+            let lastPosition: number | undefined
+            motor.on('absolute', (position: {angle: number})=> {
+                if (lastPosition !== position.angle) {
+                    lastPosition = position.angle
+                    this.motorPosition[id]?.next(lastPosition)
+                    console.log('absolute', lastPosition)
+                }
+            })
         }
-        let lastPosition: number | undefined
-        motor.on('absolute', (position: {angle: number})=> {
-            if (lastPosition !== position.angle) {
-                lastPosition = position.angle
-                this.motorPosition[id]?.next(lastPosition)
-                console.log('absolute', lastPosition)
-            }
-        })
     }
 
+    async initializeMotorToZero(motorId: IMotorId, margin: number) {
+        logger.info(`going initialze motor ${motorId.port} on ${motorId.hub} to zero with a margin of ${margin}`)
+        await this.reportPosition(motorId)
+        let currentPosition = await this.getLastPosition(motorId)
+        console.log('POS', currentPosition)
+        let attempt = 0
+        while (currentPosition < (0 - margin) || currentPosition > margin) {
+            await this.runMotorToAngle(motorId, attempt %4 ? 100 : -100, currentPosition)
+            await this.resetMotorAngleToZero(motorId, currentPosition > 0 ? -100 : 100)
+            await this.setCurrentToZero(motorId)
+            currentPosition = await this.getLastPosition(motorId)
+            console.log('POS', currentPosition)
+            attempt++
+        } 
+    }
+    
     async getLastPosition(motorId: IMotorId): Promise<number> {
         const id = convertToMotorIdString(motorId)
         const subject = this.motorPosition[id]

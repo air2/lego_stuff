@@ -57,17 +57,8 @@ async function run () {
   logger.info(`done running ${getSettings().port}`)
   
   const engine = getEngine()
-  await engine.reportPosition(CraneHubSwitchMotor)
+  await engine.initializeMotorToZero(CraneHubSwitchMotor, 20)
 
-  let position = await engine.getLastPosition(CraneHubSwitchMotor)
-  console.log('POS', position)
-  while (position < -20 || position > 20) {
-    await engine.runMotorToAngle(CraneHubSwitchMotor, 100, position)
-    await engine.resetMotorAngleToZero(CraneHubSwitchMotor, position > 0 ? -100 : 100)
-    await engine.setCurrentToZero(CraneHubSwitchMotor)
-    position = await engine.getLastPosition(CraneHubSwitchMotor)
-    console.log('POS', position)
-  }
 }
 
 run()

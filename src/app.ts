@@ -53,11 +53,11 @@ async function run () {
   // app.use(function (_req: express.Request, res: express.Response) {
   //   res.sendFile(join(process.cwd(), 'app/index.html'))
   // })
+  const engine = getEngine()
+  await engine.initializeMotorToZero(CraneHubSwitchMotor, 20)
   app.listen(getSettings().port)
   logger.info(`done running ${getSettings().port}`)
   
-  const engine = getEngine()
-  await engine.initializeMotorToZero(CraneHubSwitchMotor, 20)
 
 }
 

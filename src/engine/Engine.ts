@@ -153,6 +153,7 @@ export class Engine {
         console.log('POS', currentPosition)
         let attempt = 0
         while (currentPosition < (0 - margin) || currentPosition > margin) {
+            console.log(attempt % 2)
             await this.runMotorToAngle(motorId, attempt %4 ? 100 : -100, currentPosition)
             await this.resetMotorAngleToZero(motorId, currentPosition > 0 ? -100 : 100)
             await this.setCurrentToZero(motorId)

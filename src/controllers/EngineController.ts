@@ -27,6 +27,11 @@ export const CraneHubTiltMotor: IMotorId = {
   port: "C"
 }
 
+export const CraneHubRopeMotor: IMotorId = {
+  hub: CraneHubName,
+  port: "A"
+}
+
 
 
 @JsonController('/crane')
@@ -71,14 +76,16 @@ export default class EnigineController {
     const engine = getEngine()
     //await engine.setCurrentToZero(CraneHubName, "D")
     //await engine.resetMotorAngleToZero(CraneHubName, "D", 50)
-    if (!position.up){ 
+    if (position.up){ 
       await engine.runMotorToAngle(CraneHubSwitchMotor, 50,
       360)
-      await engine.runMotorAngle(CraneHubTiltMotor, 50, 20)
+      await engine.runMotorAngle(CraneHubSwitchMotor, 50, 10)
     } else {
      await engine.runMotorToAngle(CraneHubSwitchMotor, 50, 5)
     }
-    // await engine.runMotorFor(CraneHubName, "B", 100, 2000)
     
+    const duration = 2000
+    // engine.runMotorFor(CraneHubRopeMotor, position.up ? -50 : 50, duration)
+    await engine.runMotorFor(CraneHubExtensionMotor, 75, duration)
   }
 }

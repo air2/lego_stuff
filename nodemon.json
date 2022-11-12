@@ -4,6 +4,6 @@
     "ext": "ts,json",
     "exec-esbuild": "node esbuild.config.js && node --enable-source-maps ./out/app.js",
     "exec-vanilla": "node --enable-source-maps ./out/app.js",
-    "exec": "swc src --out-dir out && node --enable-source-maps ./out/app.js",
+    "exec": "swc src --out-dir out && node --enable-source-maps --trace-warnings ./out/app.js",
     "delay": 0
   }

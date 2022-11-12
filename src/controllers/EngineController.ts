@@ -1,5 +1,5 @@
 import { Body, Get, JsonController, Post, Put } from 'routing-controllers'
-import getEngine, { IMotorId } from '../engine/Engine'
+import getEngine, { IMotorId, IMotorsId } from '../engine/Engine'
 import { logger } from '../logger'
 
 interface IApiResult<T> {
@@ -7,10 +7,28 @@ interface IApiResult<T> {
 }
 
 export interface ICranePosition {
-  up: boolean
+  up: boolean,
+  stop?: number
+}
+
+export interface ICraneExtension {
+  out: boolean
+  duration: number
 }
 
 export const CraneHubName = '3. Kraan'
+export const MiddleHubName = '2. Voorkant'
+export const LowerHubName = '1. Onderkant'
+
+export const MainPowerMotor: IMotorsId = {
+  hub: LowerHubName,
+  ports: ['A', 'B']
+}
+
+export const MiddleHubSwitchMotor: IMotorId = {
+  hub: MiddleHubName,
+  port: 'B'
+}
 
 export const CraneHubSwitchMotor: IMotorId = {
   hub: CraneHubName,
@@ -33,7 +51,8 @@ export const CraneHubRopeMotor: IMotorId = {
 }
 
 @JsonController('/crane')
-export default class EnigineController {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default class CraneController {
   @Post('/hub/:hub/motor/:port/start/')
   async StartMotor (@Body() _speed: number): Promise<IApiResult<boolean>> {
     // const engine = getEngine()
@@ -61,18 +80,26 @@ export default class EnigineController {
 
     const tiltCheck = position.up
       ? (x: number): boolean => {
-          if (x < 134) {
+          let end = position.stop ?? 133
+          if (end > 178 || end < 133) {
+            end = 133
+          }
+          if (x < end + 1) {
             logger.info(`almost stopping, the tilt is ${x}`)
             if (stopTimeCheck(x)) { return true }
           }
-          return x < 133
+          return x < end
         }
       : (x: number): boolean => {
-          if (x > 177) {
+          let end = position.stop ?? 178
+          if (end > 178 || end < 133) {
+            end = 178
+          }
+          if (x > end - 1) {
             logger.info(`almost stopping, the tilt is ${x}`)
             if (stopTimeCheck(x)) { return true }
           }
-          return x > 178
+          return x > end
         }
     await engine.startMotorWhileTilt(CraneHubTiltMotor, position.up ? -100 : 100, tiltCheck)
     if (!position.up) {
@@ -82,30 +109,43 @@ export default class EnigineController {
   }
 
   @Put('/rope/extend/')
-  async ExtendRope (@Body() position: ICranePosition) {
+  async ExtendRope (@Body() position: ICraneExtension) {
     logger.info('extending crane')
     const engine = getEngine()
-    const duration = 5000
-    engine.runMotorFor(CraneHubRopeMotor, position.up ? -100 : 100, duration)
+    const duration = position.duration ?? 5000
+    await engine.runMotorFor(CraneHubRopeMotor, position.out ? -100 : 100, duration)
   }
 
   @Put('/extend/')
-  async ExtendCrane (@Body() position: ICranePosition) {
+  async ExtendCrane (@Body() position: ICraneExtension) {
     logger.info('extending crane')
     const engine = getEngine()
     // await engine.setCurrentToZero(CraneHubName, "D")
     // await engine.resetMotorAngleToZero(CraneHubName, "D", 50)
-    if (position.up) {
+    if (position.out) {
       await engine.runMotorToAngle(CraneHubSwitchMotor, 50,
         360)
-      await engine.runMotorAngle(CraneHubSwitchMotor, 50, 10)
+      await engine.runMotorToAngle(CraneHubSwitchMotor, 50, 10)
     } else {
       await engine.runMotorToAngle(CraneHubSwitchMotor, 50, 5)
     }
 
-    const duration = 2000
+    const duration = position.duration ?? 2000
     // engine.runMotorFor(CraneHubRopeMotor, position.up ? -50 : 50, duration)
-    await engine.runMotorFor(CraneHubExtensionMotor, position.up ? -75 : 75, 1000)
-    await engine.runMotorFor(CraneHubExtensionMotor, position.up ? -100 : 100, duration)
+    await engine.runMotorFor(CraneHubExtensionMotor, 75, 1000)
+    const promise = this.ExtendRope(position)
+    await engine.runMotorFor(CraneHubExtensionMotor, 100, duration - 1000)
+    await promise
+  }
+
+  @Put('/stabilizers')
+  async ExtendStablizers (@Body() position: ICraneExtension) {
+    logger.info('extend stablizers')
+    const engine = getEngine()
+    await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, -60, 3000)
+
+    if (position.out) {
+      await engine.runMotorFor(MainPowerMotor, 50, position.duration)
+    }
   }
 }

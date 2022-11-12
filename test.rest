@@ -12,6 +12,7 @@ content-type: application/json
 
 {
     "up": false
+//    ,"stop": 150
 }
 
 #### CRANE EXTEND
@@ -19,7 +20,8 @@ PUT http://localhost:57190/api/crane/extend/ HTTP/1.1
 content-type: application/json
 
 {
-    "up": true
+    "out": true,
+    "duration": 10000
 }
 
 #### CRANE RETRACT
@@ -27,7 +29,8 @@ PUT http://localhost:57190/api/crane/extend/ HTTP/1.1
 content-type: application/json
 
 {
-    "up": false
+    "out": false,
+    "duration": 10000
 }
 
 
@@ -36,7 +39,8 @@ PUT http://localhost:57190/api/crane/rope/extend/ HTTP/1.1
 content-type: application/json
 
 {
-    "up": false
+    "out": false,
+    "duration": 5000
 }
 
 #### ROPE EXTEND
@@ -44,7 +48,17 @@ PUT http://localhost:57190/api/crane/rope/extend/ HTTP/1.1
 content-type: application/json
 
 {
-    "up": true
+    "out": true,
+    "duration": 5000
+}
+
+### STABILIZERS EXTEND
+PUT http://localhost:57190/api/crane/stabilizers/ HTTP/1.1
+content-type: application/json
+
+{
+    "out": true,
+    "duration": 10000
 }
 
 #### GET HUBS

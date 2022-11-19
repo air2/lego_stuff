@@ -102,11 +102,8 @@ export class Engine {
         logger.info(`initialized hub ${hub.name}`)
       }
       if (hub.name === MiddleHubSwitchMotor.hub) {
-        await this.initializeMotorsToZero(MiddleHubSwitchMotor, 20)
-        const lastPos = await this.getLastPosition(MiddleHubSwitchMotor)
-        await this.runMotorToAngle(MiddleHubSwitchMotor, 50, 0 - lastPos)
-        await this.runMotorToAngle(MiddleHubSwitchMotor, 50, 40)
-        await this.runMotorToAngle(MiddleHubSwitchMotor, 50, 45, 1000)
+        // await this.runMotorToAngle(MiddleHubSwitchMotor, 20, -360)
+        await this.reportPosition(MiddleHubSwitchMotor)
         logger.info(`initialized hub ${hub.name}`)
       }
 
@@ -238,6 +235,13 @@ export class Engine {
     const hub = this.getHub(motorId.hub)
     const motor = await hub.waitForDeviceAtPort(motorId.port) as AbsoluteMotor
     await motor.resetZero()
+  }
+
+  public async rotateMotorByDegrees (motorId: IMotorId, speed: number, orientation: number): Promise<void> {
+    logger.info(`going to move motor ${motorId.port} on ${motorId.hub} to ${orientation}`)
+    const hub = this.getHub(motorId.hub)
+    const motor = await hub.waitForDeviceAtPort(motorId.port) as AbsoluteMotor
+    await motor.rotateByDegrees(orientation, speed)
   }
 
   public async runMotorToAngle (motorId: IMotorId, speed: number, orientation: number, duration?: number): Promise<AbsoluteMotor> {

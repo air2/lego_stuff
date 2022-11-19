@@ -50,9 +50,45 @@ export const CraneHubRopeMotor: IMotorId = {
   port: 'A'
 }
 
+enum CraneFunction {
+  drive,
+  pump,
+  stabilizers,
+  parapet
+}
+
 @JsonController('/crane')
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default class CraneController {
+  async chooseFunction (func: CraneFunction) {
+    const engine = getEngine()
+    await engine.initializeMotorsToZero(MiddleHubSwitchMotor, 20)
+    const lastPos = await engine.getLastPosition(MiddleHubSwitchMotor)
+    await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, 0 - lastPos)
+    await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, 40)
+    await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, 45, 1000)
+    await engine.runMotorToAngle(MiddleHubSwitchMotor, 20, -360)
+    await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, 20, 360)
+
+    switch (func) {
+      case CraneFunction.drive:
+        break
+
+      case CraneFunction.pump:
+        await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, 20, -260)
+        break
+
+      case CraneFunction.stabilizers:
+        logger.debug('stablizers')
+        await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, -20, 145)
+        break
+
+      case CraneFunction.parapet:
+        await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, 20, -260)
+        break
+    }
+  }
+
   @Post('/hub/:hub/motor/:port/start/')
   async StartMotor (@Body() _speed: number): Promise<IApiResult<boolean>> {
     // const engine = getEngine()
@@ -138,14 +174,23 @@ export default class CraneController {
     await promise
   }
 
-  @Put('/stabilizers')
-  async ExtendStablizers (@Body() position: ICraneExtension) {
+  @Put('/pump')
+  async Pump (@Body() position: ICraneExtension) {
     logger.info('extend stablizers')
     const engine = getEngine()
     await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, -60, 3000)
 
+    await engine.runMotorFor(MainPowerMotor, 100, position.duration)
+  }
+
+  @Put('/stabilizers')
+  async ExtendStablizers (@Body() position: ICraneExtension) {
+    logger.info('extend stablizers')
+    await this.chooseFunction(CraneFunction.stabilizers)
+    // const engine = getEngine()
+
     if (position.out) {
-      await engine.runMotorFor(MainPowerMotor, 50, position.duration)
+    //  await engine.runMotorFor(MainPowerMotor, 50, position.duration)
     }
   }
 }

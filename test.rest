@@ -65,7 +65,17 @@ PUT http://localhost:57190/api/crane/stabilizers/ HTTP/1.1
 content-type: application/json
 
 {
-    "duration": 10000
+    "duration": 2000,
+    "out": true
+}
+
+### STABILIZERS RETRACT
+PUT http://localhost:57190/api/crane/stabilizers/ HTTP/1.1
+content-type: application/json
+
+{
+    "duration": 3000,
+    "out": false
 }
 
 ### PARAPET TURN
@@ -73,7 +83,7 @@ PUT http://localhost:57190/api/crane/parapet/ HTTP/1.1
 content-type: application/json
 
 {
-    "duration": 10000
+    "duration": 5000
 }
 
 #### GET HUBS

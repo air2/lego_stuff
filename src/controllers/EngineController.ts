@@ -22,7 +22,7 @@ export const LowerHubName = '1. Onderkant'
 
 export const MainPowerMotor: IMotorsId = {
   hub: LowerHubName,
-  ports: ['A', 'B']
+  ports: ['A', 'C']
 }
 
 export const MiddleHubSwitchMotor: IMotorId = {
@@ -174,32 +174,26 @@ export default class CraneController {
   }
 
   @Put('/pump')
-  async Pump (@Body() _position: ICraneExtension) {
+  async Pump (@Body() position: ICraneExtension) {
     logger.info('run pump')
     await this.chooseFunction(CraneFunction.pump)
-    // const engine = getEngine()
-    //    await engine.runMotorFor(MainPowerMotor, 100, position.duration)
+    const engine = getEngine()
+    await engine.runMotorFor(MainPowerMotor, position.out ? -50 : 50, position.duration)
   }
 
   @Put('/stabilizers')
   async ExtendStablizers (@Body() position: ICraneExtension) {
     logger.info('extend stablizers')
     await this.chooseFunction(CraneFunction.stabilizers)
-    // const engine = getEngine()
-
-    if (position.out) {
-    //  await engine.runMotorFor(MainPowerMotor, 50, position.duration)
-    }
+    const engine = getEngine()
+    await engine.runMotorFor(MainPowerMotor, position.out ? -50 : 50, position.duration)
   }
 
   @Put('/parapet')
   async TurnParapet (@Body() position: ICraneExtension) {
     logger.info('extend parapet')
     await this.chooseFunction(CraneFunction.parapet)
-    // const engine = getEngine()
-
-    if (position.out) {
-    //  await engine.runMotorFor(MainPowerMotor, 50, position.duration)
-    }
+    const engine = getEngine()
+    await engine.runMotorFor(MainPowerMotor, position.out ? -50 : 50, position.duration)
   }
 }

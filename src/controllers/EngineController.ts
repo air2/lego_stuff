@@ -68,23 +68,22 @@ export default class CraneController {
     await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, 40)
     await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, 45, 1000)
     await engine.runMotorToAngle(MiddleHubSwitchMotor, 20, -360)
-    await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, 20, 360)
+    await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, 20, 365)
 
     switch (func) {
       case CraneFunction.drive:
         break
 
       case CraneFunction.pump:
-        await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, 20, -260)
+        await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, -20, 156)
         break
 
       case CraneFunction.stabilizers:
-        logger.debug('stablizers')
-        await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, -20, 145)
+        await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, -20, 262)
         break
 
       case CraneFunction.parapet:
-        await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, 20, -260)
+        await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, -20, 372)
         break
     }
   }
@@ -175,18 +174,28 @@ export default class CraneController {
   }
 
   @Put('/pump')
-  async Pump (@Body() position: ICraneExtension) {
-    logger.info('extend stablizers')
-    const engine = getEngine()
-    await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, -60, 3000)
-
-    await engine.runMotorFor(MainPowerMotor, 100, position.duration)
+  async Pump (@Body() _position: ICraneExtension) {
+    logger.info('run pump')
+    await this.chooseFunction(CraneFunction.pump)
+    // const engine = getEngine()
+    //    await engine.runMotorFor(MainPowerMotor, 100, position.duration)
   }
 
   @Put('/stabilizers')
   async ExtendStablizers (@Body() position: ICraneExtension) {
     logger.info('extend stablizers')
     await this.chooseFunction(CraneFunction.stabilizers)
+    // const engine = getEngine()
+
+    if (position.out) {
+    //  await engine.runMotorFor(MainPowerMotor, 50, position.duration)
+    }
+  }
+
+  @Put('/parapet')
+  async TurnParapet (@Body() position: ICraneExtension) {
+    logger.info('extend parapet')
+    await this.chooseFunction(CraneFunction.parapet)
     // const engine = getEngine()
 
     if (position.out) {

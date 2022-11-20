@@ -52,8 +52,24 @@ content-type: application/json
     "duration": 5000
 }
 
+### RUN PUMP
+PUT http://localhost:57190/api/crane/pump/ HTTP/1.1
+content-type: application/json
+
+{
+    "duration": 10000
+}
+
 ### STABILIZERS EXTEND
 PUT http://localhost:57190/api/crane/stabilizers/ HTTP/1.1
+content-type: application/json
+
+{
+    "duration": 10000
+}
+
+### PARAPET TURN
+PUT http://localhost:57190/api/crane/parapet/ HTTP/1.1
 content-type: application/json
 
 {

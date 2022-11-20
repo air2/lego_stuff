@@ -62,7 +62,7 @@ enum CraneFunction {
 export default class CraneController {
   async chooseFunction (func: CraneFunction) {
     const engine = getEngine()
-    await engine.initializeMotorsToZero(MiddleHubSwitchMotor, 20)
+    await engine.initializeMotorsToZero(MiddleHubSwitchMotor, 20, 3000)
     const lastPos = await engine.getLastPosition(MiddleHubSwitchMotor)
     await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, 0 - lastPos)
     await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, 40)
@@ -75,7 +75,7 @@ export default class CraneController {
         break
 
       case CraneFunction.pump:
-        await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, -20, 156)
+        await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, -20, 151)
         break
 
       case CraneFunction.stabilizers:

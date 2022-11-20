@@ -187,7 +187,8 @@ export class Engine {
     }
   }
 
-  async initializeMotorsToZero (motorsId: IMotorsId | IMotorId, margin: number) {
+  async initializeMotorsToZero (motorsId: IMotorsId | IMotorId, margin: number, duration?: number) {
+    const endTime = Date.now() + (duration ?? 0)
     for (const motorId of getMotorIds(motorsId)) {
       logger.info(`going initialze motor ${motorId.port} on ${motorsId.hub} to zero with a margin of ${margin}`)
       await this.reportPosition(motorId)
@@ -204,6 +205,9 @@ export class Engine {
         currentPosition = await this.getLastPosition(motorId)
         console.log('POS', currentPosition)
         attempt++
+        if (duration && (Date.now() >= endTime)) {
+          break
+        }
       }
       // await this.setCurrentToZero(motorId)
     }

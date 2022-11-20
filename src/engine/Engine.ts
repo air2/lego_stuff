@@ -252,7 +252,7 @@ export class Engine {
     logger.info(`going to move motor ${motorId.port} on ${motorId.hub} to ${orientation}`)
     const hub = this.getHub(motorId.hub)
     const motor = await hub.waitForDeviceAtPort(motorId.port) as AbsoluteMotor
-
+    await this.reportPosition(motorId)
     let angle = orientation
     // motor.gotoRealZero(50)
     //  do {

@@ -78,6 +78,15 @@ content-type: application/json
     "out": false
 }
 
+### STABILIZERS TEST
+PUT http://localhost:57190/api/crane/stabilizers/test-down HTTP/1.1
+content-type: application/json
+
+{
+//    "duration": 3000,
+    "out": true
+}
+
 ### PARAPET TURN
 PUT http://localhost:57190/api/crane/parapet/ HTTP/1.1
 content-type: application/json

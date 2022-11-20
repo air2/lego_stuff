@@ -16,6 +16,10 @@ export interface ICraneExtension {
   duration: number
 }
 
+export interface IStabilizers extends ICraneExtension {
+  down: boolean
+}
+
 export const CraneHubName = '3. Kraan'
 export const MiddleHubName = '2. Voorkant'
 export const LowerHubName = '1. Onderkant'
@@ -23,6 +27,11 @@ export const LowerHubName = '1. Onderkant'
 export const MainPowerMotor: IMotorsId = {
   hub: LowerHubName,
   ports: ['A', 'C']
+}
+
+export const PnuematicSwitchMotor: IMotorId = {
+  hub: LowerHubName,
+  port: 'B'
 }
 
 export const MiddleHubSwitchMotor: IMotorId = {
@@ -187,6 +196,26 @@ export default class CraneController {
     await this.chooseFunction(CraneFunction.stabilizers)
     const engine = getEngine()
     await engine.runMotorFor(MainPowerMotor, position.out ? -50 : 50, position.duration)
+    // if (position.out) {
+    //   this.chooseFunction(Cran)
+    // }
+  }
+
+  @Put('/stabilizers/test-down')
+  async ExtendStablizersTest (@Body() _position: ICraneExtension) {
+    logger.info('extend stablizers')
+    //    await this.chooseFunction(CraneFunction.pump)
+    const engine = getEngine()
+    if (_position.out) {
+      await engine.runMotorToAngle(PnuematicSwitchMotor, 10, 4, 2000)
+    } else {
+      await engine.runMotorToAngle(PnuematicSwitchMotor, 10, -57, 3000)
+    }
+    //    engine.rotateMotorByDegrees(PnuematicSwitchMotor, 10, 1)
+    // await engine.runMotorFor(MainPowerMotor, position.out ? -50 : 50, position.duration)
+    // if (position.out) {
+    //   this.chooseFunction(Cran)
+    // }
   }
 
   @Put('/parapet')

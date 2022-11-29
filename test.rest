@@ -92,7 +92,15 @@ PUT http://localhost:57190/api/crane/parapet/ HTTP/1.1
 content-type: application/json
 
 {
-    "duration": 5000
+    "duration": 1000
+}
+
+### DRIVE
+PUT http://localhost:57190/api/crane/drive/ HTTP/1.1
+content-type: application/json
+
+{
+    "duration": 0
 }
 
 #### GET HUBS

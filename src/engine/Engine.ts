@@ -92,7 +92,8 @@ export class Engine {
       hub.on('tilt', (sensor: TechnicMediumHubTiltSensor) => {
         //    console.log('hub is titlted', sensor.values)
         const sub = this.onTiltX[hub.name]
-        const newValue = sensor.values.tilt.x
+        // eslint-disable-next-line dot-notation
+        const newValue = sensor.values['tilt'].x
         if (sub && sub.value !== newValue) {
           sub.next(newValue)
         }
@@ -246,6 +247,32 @@ export class Engine {
     const hub = this.getHub(motorId.hub)
     const motor = await hub.waitForDeviceAtPort(motorId.port) as AbsoluteMotor
     await motor.rotateByDegrees(orientation, speed)
+  }
+
+  public async getMaxPosition (motorId: IMotorId, speed: number, step: number) {
+    await this.reportPosition(motorId)
+    const hub = this.getHub(motorId.hub)
+    const motor = await hub.waitForDeviceAtPort(motorId.port) as AbsoluteMotor
+
+    motor.setPower(speed)
+    for (;;) {
+      const beforePos = await this.getLastPosition(motorId)
+      await hub.sleep(500)
+      const afterPos = await this.getLastPosition(motorId)
+      const difference = beforePos - afterPos
+      if (difference > 2 || difference < -2) { continue }
+      await motor.brake()
+      return afterPos
+    }
+
+    // for (let i = 0; i < 360; i += step) {
+    //   await motor.rotateByDegrees(step, speed)
+    //   const afterPos = await this.getLastPosition(motorId)
+    //   const difference = beforePos - afterPos
+    //   if (difference > 2 || difference < -2) { continue }
+    //   return afterPos
+    // }
+    // return await this.getLastPosition(motorId)
   }
 
   public async runMotorToAngle (motorId: IMotorId, speed: number, orientation: number, duration?: number): Promise<AbsoluteMotor> {

@@ -1,4 +1,4 @@
-import { Body, Get, JsonController, Post, Put } from 'routing-controllers'
+import { Body, Get, InternalServerError, JsonController, Post, Put } from 'routing-controllers'
 import getEngine, { IMotorId, IMotorsId } from '../engine/Engine'
 import { logger } from '../logger'
 
@@ -24,9 +24,14 @@ export const CraneHubName = '3. Kraan'
 export const MiddleHubName = '2. Voorkant'
 export const LowerHubName = '1. Onderkant'
 
-export const MainPowerMotor: IMotorsId = {
+export const MainPowerMotors: IMotorsId = {
   hub: LowerHubName,
   ports: ['A', 'C']
+}
+
+export const DriveHelperMotor: IMotorId = {
+  hub: MiddleHubName,
+  port: 'C'
 }
 
 export const PnuematicSwitchMotor: IMotorId = {
@@ -71,13 +76,23 @@ enum CraneFunction {
 export default class CraneController {
   async chooseFunction (func: CraneFunction) {
     const engine = getEngine()
-    await engine.initializeMotorsToZero(MiddleHubSwitchMotor, 20, 3000)
-    const lastPos = await engine.getLastPosition(MiddleHubSwitchMotor)
-    await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, 0 - lastPos)
-    await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, 40)
-    await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, 45, 1000)
-    await engine.runMotorToAngle(MiddleHubSwitchMotor, 20, -360)
-    await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, 20, 365)
+    engine.setCurrentToZero(MiddleHubSwitchMotor)
+    const maxRight = await engine.getMaxPosition(MiddleHubSwitchMotor, -20, 10)
+    const maxLeft = await engine.getMaxPosition(MiddleHubSwitchMotor, 20, 10)
+    await engine.getMaxPosition(MiddleHubSwitchMotor, -20, 10)
+    const maxDiff = maxLeft - maxRight
+    engine.setCurrentToZero(MiddleHubSwitchMotor)
+    console.log('DIFF', maxDiff, maxLeft, maxRight)
+    if (maxDiff < 300 && maxDiff > -300) {
+      throw new InternalServerError(`not correctly initialized ${maxDiff} ${maxLeft}, ${maxRight}`)
+    }
+    // await engine.initializeMotorsToZero(MiddleHubSwitchMotor, 20, 3000)
+    // const lastPos = await engine.getLastPosition(MiddleHubSwitchMotor)
+    // await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, 0 - lastPos)
+    // await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, 40)
+    // await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, 45, 1000)
+    // await engine.runMotorToAngle(MiddleHubSwitchMotor, 20, -360)
+    // await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, 20, 365)
 
     switch (func) {
       case CraneFunction.drive:
@@ -187,7 +202,7 @@ export default class CraneController {
     logger.info('run pump')
     await this.chooseFunction(CraneFunction.pump)
     const engine = getEngine()
-    await engine.runMotorFor(MainPowerMotor, position.out ? -50 : 50, position.duration)
+    await engine.runMotorFor(MainPowerMotors, position.out ? -50 : 50, position.duration)
   }
 
   @Put('/stabilizers')
@@ -195,7 +210,7 @@ export default class CraneController {
     logger.info('extend stablizers')
     await this.chooseFunction(CraneFunction.stabilizers)
     const engine = getEngine()
-    await engine.runMotorFor(MainPowerMotor, position.out ? -50 : 50, position.duration)
+    await engine.runMotorFor(MainPowerMotors, position.out ? -50 : 50, position.duration)
     // if (position.out) {
     //   this.chooseFunction(Cran)
     // }
@@ -223,6 +238,18 @@ export default class CraneController {
     logger.info('extend parapet')
     await this.chooseFunction(CraneFunction.parapet)
     const engine = getEngine()
-    await engine.runMotorFor(MainPowerMotor, position.out ? -50 : 50, position.duration)
+    await engine.runMotorFor(MainPowerMotors, position.out ? -50 : 50, position.duration)
+  }
+
+  @Put('/drive')
+  async Drive (@Body() position: ICraneExtension) {
+    logger.info('drive')
+    await this.chooseFunction(CraneFunction.drive)
+    const engine = getEngine()
+    const power = 100
+    await Promise.all([
+      engine.runMotorFor(MainPowerMotors, position.out ? -power : power, position.duration),
+      engine.runMotorFor(DriveHelperMotor, position.out ? -power : power, position.duration)
+    ])
   }
 }

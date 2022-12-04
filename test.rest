@@ -57,7 +57,7 @@ PUT http://localhost:57190/api/crane/pump/ HTTP/1.1
 content-type: application/json
 
 {
-    "duration": 10000
+    "duration": 5000
 }
 
 ### STABILIZERS EXTEND
@@ -100,7 +100,8 @@ PUT http://localhost:57190/api/crane/drive/ HTTP/1.1
 content-type: application/json
 
 {
-    "duration": 0
+    "duration": 1000,
+    "out": true
 }
 
 #### GET HUBS

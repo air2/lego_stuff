@@ -249,7 +249,7 @@ export class Engine {
     await motor.rotateByDegrees(orientation, speed)
   }
 
-  public async getMaxPosition (motorId: IMotorId, speed: number, step: number) {
+  public async getMaxPosition (motorId: IMotorId, speed: number) {
     await this.reportPosition(motorId)
     const hub = this.getHub(motorId.hub)
     const motor = await hub.waitForDeviceAtPort(motorId.port) as AbsoluteMotor

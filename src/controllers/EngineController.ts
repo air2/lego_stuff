@@ -1,4 +1,4 @@
-import { Body, Get, InternalServerError, JsonController, Post, Put } from 'routing-controllers'
+import { Body, Get, JsonController, Post, Put } from 'routing-controllers'
 import getEngine, { IMotorId, IMotorsId } from '../engine/Engine'
 import { logger } from '../logger'
 
@@ -35,8 +35,8 @@ export const DriveHelperMotor: IMotorId = {
 }
 
 export const PnuematicSwitchMotor: IMotorId = {
-  hub: LowerHubName,
-  port: 'B'
+  hub: MiddleHubName,
+  port: 'D'
 }
 
 export const MiddleHubSwitchMotor: IMotorId = {
@@ -74,42 +74,35 @@ enum CraneFunction {
 @JsonController('/crane')
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default class CraneController {
+  private _lastCraneFunction?: CraneFunction
+
   async chooseFunction (func: CraneFunction) {
+    if (this._lastCraneFunction === func) { return }
+
     const engine = getEngine()
     engine.setCurrentToZero(MiddleHubSwitchMotor)
-    const maxRight = await engine.getMaxPosition(MiddleHubSwitchMotor, -20, 10)
-    const maxLeft = await engine.getMaxPosition(MiddleHubSwitchMotor, 20, 10)
-    await engine.getMaxPosition(MiddleHubSwitchMotor, -20, 10)
-    const maxDiff = maxLeft - maxRight
-    engine.setCurrentToZero(MiddleHubSwitchMotor)
-    console.log('DIFF', maxDiff, maxLeft, maxRight)
-    if (maxDiff < 300 && maxDiff > -300) {
-      throw new InternalServerError(`not correctly initialized ${maxDiff} ${maxLeft}, ${maxRight}`)
-    }
-    // await engine.initializeMotorsToZero(MiddleHubSwitchMotor, 20, 3000)
-    // const lastPos = await engine.getLastPosition(MiddleHubSwitchMotor)
-    // await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, 0 - lastPos)
-    // await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, 40)
-    // await engine.runMotorToAngle(MiddleHubSwitchMotor, 50, 45, 1000)
-    // await engine.runMotorToAngle(MiddleHubSwitchMotor, 20, -360)
-    // await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, 20, 365)
+    await engine.getMaxPosition(MiddleHubSwitchMotor, -30)
+    await engine.getMaxPosition(MiddleHubSwitchMotor, 30)
 
     switch (func) {
       case CraneFunction.drive:
         break
 
       case CraneFunction.pump:
-        await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, -20, 151)
+        await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, -20, 175)
         break
 
       case CraneFunction.stabilizers:
-        await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, -20, 262)
+        await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, -20, 280)
         break
 
       case CraneFunction.parapet:
-        await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, -20, 372)
+        await engine.getMaxPosition(MiddleHubSwitchMotor, -30)
+        // await engine.rotateMotorByDegrees(MiddleHubSwitchMotor, -20, 372)
         break
     }
+
+    this._lastCraneFunction = func
   }
 
   @Post('/hub/:hub/motor/:port/start/')
@@ -202,7 +195,7 @@ export default class CraneController {
     logger.info('run pump')
     await this.chooseFunction(CraneFunction.pump)
     const engine = getEngine()
-    await engine.runMotorFor(MainPowerMotors, position.out ? -50 : 50, position.duration)
+    await engine.runMotorFor(MainPowerMotors, position.out ? -100 : 100, position.duration)
   }
 
   @Put('/stabilizers')
@@ -222,9 +215,12 @@ export default class CraneController {
     //    await this.chooseFunction(CraneFunction.pump)
     const engine = getEngine()
     if (_position.out) {
-      await engine.runMotorToAngle(PnuematicSwitchMotor, 10, 4, 2000)
+      await engine.getMaxPosition(PnuematicSwitchMotor, 30)
+      //      await engine.runMotorToAngle(PnuematicSwitchMotor, 10, 4, 2000)
     } else {
-      await engine.runMotorToAngle(PnuematicSwitchMotor, 10, -57, 3000)
+      await engine.getMaxPosition(PnuematicSwitchMotor, -30)
+
+      // await engine.runMotorToAngle(PnuematicSwitchMotor, 10, -57, 3000)
     }
     //    engine.rotateMotorByDegrees(PnuematicSwitchMotor, 10, 1)
     // await engine.runMotorFor(MainPowerMotor, position.out ? -50 : 50, position.duration)

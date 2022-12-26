@@ -57,7 +57,7 @@ PUT http://localhost:57190/api/crane/pump/ HTTP/1.1
 content-type: application/json
 
 {
-    "duration": 5000
+    "duration": 1000
 }
 
 ### STABILIZERS EXTEND
@@ -65,7 +65,7 @@ PUT http://localhost:57190/api/crane/stabilizers/ HTTP/1.1
 content-type: application/json
 
 {
-    "duration": 2000,
+    "duration": 5000,
     "out": true
 }
 
@@ -74,7 +74,7 @@ PUT http://localhost:57190/api/crane/stabilizers/ HTTP/1.1
 content-type: application/json
 
 {
-    "duration": 3000,
+    "duration": 6000,
     "out": false
 }
 
@@ -83,7 +83,7 @@ PUT http://localhost:57190/api/crane/stabilizers/test-down HTTP/1.1
 content-type: application/json
 
 {
-//    "duration": 3000,
+    "duration": 3000,
     "out": true
 }
 
@@ -101,7 +101,39 @@ content-type: application/json
 
 {
     "duration": 1000,
-    "out": true
+    "out": false
+}
+
+### func test drive
+PUT http://localhost:57190/api/crane/func_test/ HTTP/1.1
+content-type: application/json
+
+{
+    "function": "drive"
+}
+
+### func test pump
+PUT http://localhost:57190/api/crane/func_test/ HTTP/1.1
+content-type: application/json
+
+{
+    "function": "pump"
+}
+
+### func test stabilizers
+PUT http://localhost:57190/api/crane/func_test/ HTTP/1.1
+content-type: application/json
+
+{
+    "function": "stabilizers"
+}
+
+### func test parapet
+PUT http://localhost:57190/api/crane/func_test/ HTTP/1.1
+content-type: application/json
+
+{
+    "function": "parapet"
 }
 
 #### GET HUBS

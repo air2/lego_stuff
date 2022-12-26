@@ -65,10 +65,10 @@ export const CraneHubRopeMotor: IMotorId = {
 }
 
 enum CraneFunction {
-  drive,
-  pump,
-  stabilizers,
-  parapet
+  drive = 'drive',
+  pump = 'pump',
+  stabilizers = 'stabilizers',
+  parapet = 'parapet'
 }
 
 @JsonController('/crane')
@@ -81,8 +81,8 @@ export default class CraneController {
 
     const engine = getEngine()
     engine.setCurrentToZero(MiddleHubSwitchMotor)
-    await engine.getMaxPosition(MiddleHubSwitchMotor, -30)
-    await engine.getMaxPosition(MiddleHubSwitchMotor, 30)
+    await engine.getMaxPosition(MiddleHubSwitchMotor, -50)
+    await engine.getMaxPosition(MiddleHubSwitchMotor, 50)
 
     switch (func) {
       case CraneFunction.drive:
@@ -202,8 +202,10 @@ export default class CraneController {
   async ExtendStablizers (@Body() position: ICraneExtension) {
     logger.info('extend stablizers')
     await this.chooseFunction(CraneFunction.stabilizers)
-    const engine = getEngine()
-    await engine.runMotorFor(MainPowerMotors, position.out ? -50 : 50, position.duration)
+    if (position.duration) {
+      const engine = getEngine()
+      await engine.runMotorFor(MainPowerMotors, position.out ? -50 : 50, position.duration)
+    }
     // if (position.out) {
     //   this.chooseFunction(Cran)
     // }
@@ -233,19 +235,29 @@ export default class CraneController {
   async TurnParapet (@Body() position: ICraneExtension) {
     logger.info('extend parapet')
     await this.chooseFunction(CraneFunction.parapet)
-    const engine = getEngine()
-    await engine.runMotorFor(MainPowerMotors, position.out ? -50 : 50, position.duration)
+    if (position.duration) {
+      const engine = getEngine()
+      await engine.runMotorFor(MainPowerMotors, position.out ? -50 : 50, position.duration)
+    }
   }
 
   @Put('/drive')
   async Drive (@Body() position: ICraneExtension) {
     logger.info('drive')
     await this.chooseFunction(CraneFunction.drive)
-    const engine = getEngine()
-    const power = 100
-    await Promise.all([
-      engine.runMotorFor(MainPowerMotors, position.out ? -power : power, position.duration),
-      engine.runMotorFor(DriveHelperMotor, position.out ? -power : power, position.duration)
-    ])
+    if (position.duration) {
+      const engine = getEngine()
+      const power = 100
+      const helperPower = power
+      await Promise.all([
+        engine.runMotorFor(MainPowerMotors, position.out ? -power : power, position.duration),
+        engine.runMotorFor(DriveHelperMotor, position.out ? -helperPower : helperPower, position.duration)
+      ])
+    }
+  }
+
+  @Put('/func_test')
+  async FuncTest (@Body() position: {function: CraneFunction}) {
+    await this.chooseFunction(position.function)
   }
 }
